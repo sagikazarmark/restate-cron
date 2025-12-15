@@ -1,0 +1,21 @@
+[package]
+name = "restate-cron"
+edition = { workspace = true }
+version = { workspace = true }
+description = { workspace = true }
+license = { workspace = true }
+homepage = { workspace = true }
+repository = { workspace = true }
+publish = false
+
+[dependencies]
+anyhow = { workspace = true }
+chrono = { version = "0.4.42", features = ["serde"] }
+content_disposition = "0.4.0"
+cron = { version = "0.15.0", features = ["serde"] }
+futures = "0.3"
+restate-sdk = { workspace = true }
+rhai = { version = "1.23.6", features = ["serde", "sync"] }
+schemars = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }

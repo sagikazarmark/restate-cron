@@ -1,0 +1,8 @@
+/.devenv*
+/.direnv/
+.env
+.env.local
+.pre-commit-config.yaml
+devenv.local.nix
+/target/
+/var/

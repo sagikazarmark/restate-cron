@@ -1,0 +1,15 @@
+services:
+  restate:
+    image: docker.restate.dev/restatedev/restate:latest
+    ports:
+      - 127.0.0.1:9070:9070
+      - 127.0.0.1:9071:9071
+      - 127.0.0.1:8080:8080
+    volumes:
+      - restate-data:/restate-data
+
+  examples:
+    image: ghcr.io/sagikazarmark/restate-examples:v0.1.0
+
+volumes:
+  restate-data:

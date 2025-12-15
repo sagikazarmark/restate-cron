@@ -1,0 +1,28 @@
+[workspace]
+members = ["lib", "bin"]
+resolver = "2"
+
+[workspace.package]
+edition = "2024"
+version = "0.0.0"
+description = "Restate cron service"
+license = "MIT"
+repository = "https://github.com/sagikazarmark/restate-cron"
+homepage = "https://github.com/sagikazarmark/restate-cron"
+
+[workspace.dependencies]
+restate-cron = { path = "lib" }
+
+anyhow = "1.0"
+humantime-serde = "1.1.1"
+schemars = { version = "1.1", features = ["chrono04", "jiff02", "url2"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+restate-sdk = { version = "0.7", features = ["schemars"] }
+
+[workspace.metadata.release]
+publish = false
+sign-commit = true
+sign-tag = true
+tag-message = "Release {{version}}"
+tag-prefix = ""
