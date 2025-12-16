@@ -4,6 +4,8 @@ use anyhow::{Result, anyhow};
 use chrono::{DateTime, Utc};
 use cron::Schedule;
 use restate_sdk::{context::RequestTarget, prelude::*};
+use rhai::packages::Package;
+use rhai_chrono::ChronoPackage;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -199,8 +201,15 @@ impl ObjectImpl {
 
 impl Default for ObjectImpl {
     fn default() -> Self {
+        let mut engine = rhai::Engine::new();
+
+        {
+            let package = ChronoPackage::new();
+            package.register_into_engine(&mut engine);
+        }
+
         Self {
-            rhai_engine: rhai::Engine::new(),
+            rhai_engine: engine,
         }
     }
 }
