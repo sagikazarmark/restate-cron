@@ -51,7 +51,7 @@ fn example_cron_job() -> CrobJob {
             handler: "greet".to_string(),
         },
         payload: Some(Payload::Json {
-            data: serde_json::json!("World"),
+            content: serde_json::json!("World"),
         }),
     }
 }
@@ -67,9 +67,8 @@ impl CrobJob {
 #[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
 #[serde(rename_all = "camelCase", tag = "type")]
 pub enum Payload {
-    Json { data: serde_json::Value },
-    Raw { data: String },
-    Rhai { script: String },
+    Json { content: serde_json::Value },
+    Rhai { content: String },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
@@ -245,12 +244,13 @@ impl Object for ObjectImpl {
 
         if let Some(payload) = &job.payload {
             let data = match payload {
-                Payload::Json { data } => data.to_string(),
-                Payload::Raw { data } => data.to_string(),
-                Payload::Rhai { script } => {
+                Payload::Json { content: data } => Json(data.clone()),
+                Payload::Rhai { content: script } => {
                     let result = self.rhai_engine.eval::<rhai::Dynamic>(script.as_str())?;
 
-                    rhai::serde::from_dynamic::<serde_json::Value>(&result)?.to_string()
+                    let value = rhai::serde::from_dynamic::<serde_json::Value>(&result)?;
+
+                    Json(value)
                 }
             };
 
