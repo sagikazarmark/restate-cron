@@ -240,7 +240,8 @@ impl Object for ObjectImpl {
                 Payload::Raw { data } => data.to_string(),
                 Payload::Rhai { script } => {
                     let result = self.rhai_engine.eval::<rhai::Dynamic>(script.as_str())?;
-                    serde_json::to_string(&result)?
+
+                    rhai::serde::from_dynamic::<serde_json::Value>(&result)?.to_string()
                 }
             };
 
