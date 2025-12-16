@@ -15,16 +15,16 @@ use crate::error::TerminalExt;
 #[name = "CronJob"]
 pub trait Object {
     /// Create a new cron job.
-    async fn create(job: Json<CrobJob>) -> HandlerResult<()>;
+    async fn create(job: Json<JobSpec>) -> HandlerResult<()>;
     /// Create a new or replace an existing cron job.
-    async fn replace(job: Json<CrobJob>) -> HandlerResult<()>;
+    async fn replace(job: Json<JobSpec>) -> HandlerResult<()>;
     /// Cancel an existing cron job.
     async fn cancel() -> HandlerResult<()>;
     /// Internal handler for running the cron job.
     async fn run() -> HandlerResult<()>;
     /// Get the details of an existing cron job.
     #[shared]
-    async fn get() -> HandlerResult<Json<CrobJob>>;
+    async fn get() -> HandlerResult<Json<JobSpec>>;
     /// Get the next run time of an existing cron job.
     #[shared]
     #[name = "getNextRun"]
@@ -34,7 +34,7 @@ pub trait Object {
 #[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 #[schemars(example = example_cron_job())]
-pub struct CrobJob {
+pub struct JobSpec {
     /// Cron schedule for the job (eg. "*/1 * * * * *").
     pub schedule: String,
     /// Target service to be called.
@@ -43,8 +43,8 @@ pub struct CrobJob {
     pub payload: Option<Payload>,
 }
 
-fn example_cron_job() -> CrobJob {
-    CrobJob {
+fn example_cron_job() -> JobSpec {
+    JobSpec {
         schedule: "0 */1 * * * *".to_string(),
         target: ServiceType::Service {
             name: "Greeter".to_string(),
@@ -56,7 +56,7 @@ fn example_cron_job() -> CrobJob {
     }
 }
 
-impl CrobJob {
+impl JobSpec {
     fn validate(&self) -> HandlerResult<()> {
         parse_schedule(self.schedule.clone())?;
 
@@ -161,9 +161,9 @@ impl ObjectImpl {
         Ok(())
     }
 
-    async fn _create(&self, ctx: &ObjectContext<'_>, job: Json<CrobJob>) -> HandlerResult<()> {
+    async fn _create(&self, ctx: &ObjectContext<'_>, job: Json<JobSpec>) -> HandlerResult<()> {
         // Check if job already exists
-        if ctx.get::<Json<CrobJob>>(CRON_JOB).await?.is_some() {
+        if ctx.get::<Json<JobSpec>>(JOB_SPEC).await?.is_some() {
             return Err(TerminalError::new_with_code(409, "Cron job already exists").into());
         }
 
@@ -172,7 +172,7 @@ impl ObjectImpl {
         // Validate job specification and return early if invalid
         job.validate()?;
 
-        ctx.set::<Json<CrobJob>>(CRON_JOB, Json(job.clone()));
+        ctx.set::<Json<JobSpec>>(JOB_SPEC, Json(job.clone()));
 
         ObjectImpl::schedule_next(&ctx, job.schedule).await?;
 
@@ -184,7 +184,7 @@ impl ObjectImpl {
         let next_run = ctx.get::<Json<NextRun>>(NEXT_RUN).await?;
 
         // Clear state
-        ctx.clear(CRON_JOB);
+        ctx.clear(JOB_SPEC);
         ctx.clear(NEXT_RUN);
 
         // Cancel the next scheduled invocation
@@ -213,15 +213,15 @@ impl Default for ObjectImpl {
     }
 }
 
-const CRON_JOB: &str = "cron_job";
-const NEXT_RUN: &str = "cron_next_run";
+const JOB_SPEC: &str = "job_spec";
+const NEXT_RUN: &str = "next_run";
 
 impl Object for ObjectImpl {
-    async fn create(&self, ctx: ObjectContext<'_>, job: Json<CrobJob>) -> HandlerResult<()> {
+    async fn create(&self, ctx: ObjectContext<'_>, job: Json<JobSpec>) -> HandlerResult<()> {
         self._create(&ctx, job).await
     }
 
-    async fn replace(&self, ctx: ObjectContext<'_>, job: Json<CrobJob>) -> HandlerResult<()> {
+    async fn replace(&self, ctx: ObjectContext<'_>, job: Json<JobSpec>) -> HandlerResult<()> {
         self._cancel(&ctx).await?;
         self._create(&ctx, job).await
     }
@@ -231,7 +231,7 @@ impl Object for ObjectImpl {
     }
 
     async fn run(&self, ctx: ObjectContext<'_>) -> HandlerResult<()> {
-        let job = ctx.get::<Json<CrobJob>>(CRON_JOB).await?;
+        let job = ctx.get::<Json<JobSpec>>(JOB_SPEC).await?;
 
         // Job is not scheduled, do nothing
         if job.is_none() {
@@ -268,8 +268,8 @@ impl Object for ObjectImpl {
         Ok(())
     }
 
-    async fn get(&self, ctx: SharedObjectContext<'_>) -> HandlerResult<Json<CrobJob>> {
-        ctx.get::<Json<CrobJob>>(CRON_JOB)
+    async fn get(&self, ctx: SharedObjectContext<'_>) -> HandlerResult<Json<JobSpec>> {
+        ctx.get::<Json<JobSpec>>(JOB_SPEC)
             .await?
             .ok_or_else(|| TerminalError::new_with_code(404, "Cron job not found").into())
     }
