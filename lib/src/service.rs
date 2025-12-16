@@ -10,6 +10,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::error::TerminalExt;
+use crate::utils::RequestExt;
 
 #[restate_sdk::object]
 #[name = "CronJob"]
@@ -241,6 +242,7 @@ impl Object for ObjectImpl {
         let job = job.unwrap().into_inner();
         let target = job.target.clone();
         let content_type = "application/json".to_string();
+        let idempotency_key = ctx.headers().get("x-restate-id").map(|v| v.to_string());
 
         if let Some(payload) = &job.payload {
             let data = match payload {
@@ -256,10 +258,14 @@ impl Object for ObjectImpl {
 
             ctx.request::<_, ()>(target.into(), data)
                 .header("Content-Type".to_string(), content_type)
+                .idempotency_key_maybe(idempotency_key)
                 .call()
                 .await?;
         } else {
-            ctx.request::<(), ()>(target.into(), ()).call().await?;
+            ctx.request::<(), ()>(target.into(), ())
+                .idempotency_key_maybe(idempotency_key)
+                .call()
+                .await?;
         }
 
         // Schedule the next invocation
