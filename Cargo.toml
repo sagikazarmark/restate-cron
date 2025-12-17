@@ -4,7 +4,7 @@ resolver = "2"
 
 [workspace.package]
 edition = "2024"
-version = "0.4.0"
+version = "0.5.0"
 description = "Restate cron service"
 license = "MIT"
 repository = "https://github.com/sagikazarmark/restate-cron"
