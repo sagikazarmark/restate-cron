@@ -59,9 +59,9 @@ impl Cli {
             }
 
             figment = match path.extension().and_then(|s| s.to_str()) {
-                Some("toml") => figment.merge(Toml::file(&path)),
-                Some("json") => figment.merge(Json::file(&path)),
-                Some("yaml") | Some("yml") => figment.merge(Yaml::file(&path)),
+                Some("toml") => figment.merge(Toml::file(path)),
+                Some("json") => figment.merge(Json::file(path)),
+                Some("yaml") | Some("yml") => figment.merge(Yaml::file(path)),
                 _ => anyhow::bail!(
                     "Unsupported config file format. Use .toml, .json, .yaml, or .yml"
                 ),

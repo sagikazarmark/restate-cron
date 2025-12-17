@@ -91,9 +91,9 @@ pub enum ServiceType {
     },
 }
 
-impl Into<RequestTarget> for ServiceType {
-    fn into(self) -> RequestTarget {
-        match self {
+impl From<ServiceType> for RequestTarget {
+    fn from(val: ServiceType) -> Self {
+        match val {
             ServiceType::Service { name, handler } => RequestTarget::Service { name, handler },
             ServiceType::Object { name, key, handler } => {
                 RequestTarget::Object { name, key, handler }
@@ -175,7 +175,7 @@ impl ObjectImpl {
 
         ctx.set::<Json<JobSpec>>(JOB_SPEC, Json(job.clone()));
 
-        ObjectImpl::schedule_next(&ctx, job.schedule).await?;
+        ObjectImpl::schedule_next(ctx, job.schedule).await?;
 
         Ok(())
     }
