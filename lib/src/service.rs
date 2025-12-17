@@ -185,8 +185,7 @@ impl ObjectImpl {
         let next_run = ctx.get::<Json<NextRun>>(NEXT_RUN).await?;
 
         // Clear state
-        ctx.clear(JOB_SPEC);
-        ctx.clear(NEXT_RUN);
+        ctx.clear_all();
 
         // Cancel the next scheduled invocation
         if let Some(next_run) = next_run.map(|s| s.into_inner()) {
