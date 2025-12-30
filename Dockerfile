@@ -36,7 +36,7 @@ RUN cp -r ./target/$(xx-cargo --print-target-triple)/release/restate-cron /usr/l
 
 
 # FROM alpine:3.23.0@sha256:51183f2cfa6320055da30872f211093f9ff1d3cf06f39a0bdb212314c5dc7375
-FROM debian:13.2-slim@sha256:e711a7b30ec1261130d0a121050b4ed81d7fb28aeabcf4ea0c7876d4e9f5aca2
+FROM debian:13.2-slim@sha256:4bcb9db66237237d03b55b969271728dd3d955eaaa254b9db8a3db94550b1885
 
 COPY --from=builder /usr/local/bin/restate-cron /usr/local/bin/
 
