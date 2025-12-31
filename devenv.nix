@@ -1,6 +1,8 @@
 { pkgs, ... }:
 
 {
+  cachix.pull = [ "sagikazarmark-dev" ];
+
   dotenv.enable = true;
 
   packages = with pkgs; [
