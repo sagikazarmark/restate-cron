@@ -1,6 +1,6 @@
 FROM --platform=$BUILDPLATFORM tonistiigi/xx:1.9.0@sha256:c64defb9ed5a91eacb37f96ccc3d4cd72521c4bd18d5442905b95e2226b0e707 AS xx
 
-FROM --platform=$BUILDPLATFORM rust:1.92.0-slim@sha256:6cff8a33b03d328aa58d00dedda6a3c5bbee4b41e21533932bffd90d7d58f9c4 AS builder
+FROM --platform=$BUILDPLATFORM rust:1.92.0-slim@sha256:991b1768c575086cbf188eb03e78003ec4e31947029b1947e8034ae32aa6156b AS builder
 
 COPY --from=xx / /
 
