@@ -10,7 +10,7 @@ publish = false
 
 [dependencies]
 anyhow = { workspace = true }
-chrono = { version = "0.4.42", features = ["serde"] }
+chrono = { version = "0.4.43", features = ["serde"] }
 content_disposition = "0.4.0"
 cron = { version = "0.15.0", features = ["serde"] }
 futures = "0.3"
