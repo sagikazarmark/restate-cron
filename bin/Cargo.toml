@@ -16,7 +16,7 @@ path = "src/main.rs"
 restate-cron = { workspace = true }
 
 anyhow = { workspace = true }
-clap = { version = "4.5.56", features = ["derive", "env"] }
+clap = { version = "4.5.57", features = ["derive", "env"] }
 figment = { version = "0.10.19", features = ["env", "json", "toml", "yaml"] }
 humantime-serde = { workspace = true }
 restate-sdk = { workspace = true }
