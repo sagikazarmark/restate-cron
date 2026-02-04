@@ -29,9 +29,11 @@ RUN xx-apt-get update && \
     libc6-dev \
     pkg-config
 
+RUN xx-cargo --setup-target-triple
+
 COPY --from=deps /usr/src/app/recipe.json recipe.json
 
-RUN cargo chef cook --release --recipe-path recipe.json --target $(xx-cargo --print-target-triple)
+RUN xx-cargo chef cook --release --recipe-path recipe.json
 
 COPY . .
 
