@@ -1,8 +1,5 @@
-/.devenv*
-/.direnv/
-.env
-.env.local
-.pre-commit-config.yaml
-devenv.local.nix
-/target/
-/var/
+*
+!/restate-cron/
+!/restate-cron-server/
+!Cargo.*
+!**/Cargo.*
