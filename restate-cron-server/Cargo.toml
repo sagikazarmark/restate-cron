@@ -1,5 +1,5 @@
 [package]
-name = "restate-cron-bin"
+name = "restate-cron-server"
 edition = { workspace = true }
 version = { workspace = true }
 description = { workspace = true }
@@ -13,7 +13,7 @@ name = "restate-cron"
 path = "src/main.rs"
 
 [dependencies]
-restate-cron = { workspace = true }
+restate-cron = { path = "../restate-cron" }
 
 anyhow = { workspace = true }
 clap = { version = "4.5.56", features = ["derive", "env"] }

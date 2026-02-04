@@ -1,5 +1,5 @@
 [workspace]
-members = ["lib", "bin"]
+members = ["restate-cron", "restate-cron-server"]
 resolver = "2"
 
 [workspace.package]
@@ -11,8 +11,6 @@ repository = "https://github.com/sagikazarmark/restate-cron"
 homepage = "https://github.com/sagikazarmark/restate-cron"
 
 [workspace.dependencies]
-restate-cron = { path = "lib" }
-
 anyhow = "1.0"
 restate-sdk = { version = "0.7", features = ["schemars"] }
 schemars = "1.2"
