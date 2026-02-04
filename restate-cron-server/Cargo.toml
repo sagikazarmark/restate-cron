@@ -12,6 +12,9 @@ publish = false
 name = "restate-cron"
 path = "src/main.rs"
 
+[package.metadata.release]
+publish = false
+
 [dependencies]
 restate-cron = { path = "../restate-cron" }
 
