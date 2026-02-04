@@ -18,7 +18,7 @@ restate-cron = { workspace = true }
 anyhow = { workspace = true }
 clap = { version = "4.5.56", features = ["derive", "env"] }
 figment = { version = "0.10.19", features = ["env", "json", "toml", "yaml"] }
-humantime-serde = { workspace = true }
+humantime-serde = "1.1"
 restate-sdk = { workspace = true }
 schemars = { workspace = true }
 serde = { workspace = true }
