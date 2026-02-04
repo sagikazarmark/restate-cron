@@ -9,11 +9,11 @@ RUN apt-get update && apt-get install -y clang lld
 WORKDIR /usr/src/app
 
 COPY Cargo.toml Cargo.lock ./
-COPY bin/Cargo.toml ./bin/
-COPY lib/Cargo.toml ./lib/
+COPY restate-cron-server/Cargo.toml ./restate-cron-server/
+COPY restate-cron/Cargo.toml ./restate-cron/
 
-RUN mkdir -p bin/src && echo "fn main() {}" > bin/src/main.rs
-RUN mkdir -p lib/src && echo "// dummy" > lib/src/lib.rs
+RUN mkdir -p restate-cron-server/src && echo "fn main() {}" > restate-cron-server/src/main.rs
+RUN mkdir -p restate-cron/src && echo "// dummy" > restate-cron/src/lib.rs
 
 RUN cargo fetch --locked
 
