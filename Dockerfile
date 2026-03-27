@@ -3,7 +3,7 @@
 
 FROM --platform=$BUILDPLATFORM tonistiigi/xx:1.9.0@sha256:c64defb9ed5a91eacb37f96ccc3d4cd72521c4bd18d5442905b95e2226b0e707 AS xx
 
-FROM --platform=$BUILDPLATFORM rust:1.93.0-slim@sha256:e2367a80bfc3cf85e5794dcfe0b9699f96b61f5aaf8c449b4d4e25d38976d987 AS base
+FROM --platform=$BUILDPLATFORM rust:1.94.1-slim@sha256:1d0000a49fb62f4fde24455f49d59c6c088af46202d65d8f455b722f7263e8f8 AS base
 
 RUN cargo install cargo-chef
 
