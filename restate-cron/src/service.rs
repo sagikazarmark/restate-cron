@@ -146,14 +146,12 @@ impl ObjectImpl {
         let handle = ctx
             .object_client::<ObjectClient>(ctx.key())
             .run()
-            .send_after(schedule);
+            .send_after(schedule)
+            .await
+            .map_err(|err| anyhow!("Failed to schedule invocation: {}", err))?;
 
         let next_run = NextRun {
-            invocation_id: handle
-                .invocation_id()
-                .await
-                .map_err(|err| anyhow!("Failed to get invocation ID: {}", err))?
-                .to_string(),
+            invocation_id: handle.invocation_id().to_string(),
             timestamp: next_time,
         };
 
@@ -189,9 +187,7 @@ impl ObjectImpl {
 
         // Cancel the next scheduled invocation
         if let Some(next_run) = next_run.map(|s| s.into_inner()) {
-            ctx.invocation_handle(next_run.invocation_id)
-                .cancel()
-                .await?;
+            ctx.invocation_handle(next_run.invocation_id).cancel();
         }
 
         Ok(())
