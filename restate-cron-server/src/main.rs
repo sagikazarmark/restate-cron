@@ -9,7 +9,7 @@ use figment::{
     Figment,
     providers::{Env, Format, Json, Toml, Yaml},
 };
-use restate_sdk::{endpoint::Endpoint, http_server::HttpServer};
+use restate_sdk::{endpoint::Endpoint, http_server::HttpServer, service::IntoServiceDefinition};
 
 use restate_cron::*;
 
@@ -23,10 +23,10 @@ async fn main() -> Result<()> {
 
     let config = cli.load_config()?;
 
-    let mut endpoint = Endpoint::builder();
-
-    endpoint =
-        endpoint.bind_with_options(ObjectImpl::default().serve(), config.restate.service.into());
+    let service = CronJob::default()
+        .into_service_definition()
+        .options(config.restate.service.into());
+    let endpoint = Endpoint::builder().bind(service);
 
     let bind_addr = format!("0.0.0.0:{}", cli.port);
 

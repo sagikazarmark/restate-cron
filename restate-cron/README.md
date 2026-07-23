@@ -13,12 +13,12 @@ cargo add restate-cron
 The library provides a `CronJob` object service that you can add to your Restate endpoint:
 
 ```rust
-use restate_cron::ObjectImpl;
+use restate_cron::CronJob;
 use restate_sdk::prelude::*;
 
 #[tokio::main]
 async fn main() {
-    HttpServer::new(Endpoint::builder().bind(ObjectImpl::default().serve()).build())
+    HttpServer::new(Endpoint::builder().bind(CronJob::default()).build())
         .listen_and_serve("0.0.0.0:9080".parse().unwrap())
         .await;
 }
@@ -29,12 +29,12 @@ async fn main() {
 You can provide a custom Rhai engine with additional functions for dynamic payloads:
 
 ```rust
-use restate_cron::ObjectImpl;
+use restate_cron::CronJob;
 
 let mut engine = rhai::Engine::new();
 // Register custom functions...
 
-let service = ObjectImpl::new(engine);
+let service = CronJob::new(engine);
 ```
 
 ## API
