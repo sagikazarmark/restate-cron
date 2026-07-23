@@ -1,6 +1,5 @@
 use std::{convert::TryFrom, str::FromStr};
 
-use anyhow::{Result, anyhow};
 use chrono::{DateTime, Utc};
 use cron::Schedule;
 use restate_sdk::{context::RequestTarget, prelude::*};
@@ -8,29 +7,6 @@ use rhai::packages::Package;
 use rhai_chrono::ChronoPackage;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-
-use crate::error::TerminalExt;
-use crate::utils::RequestExt;
-
-#[restate_sdk::object]
-#[name = "CronJob"]
-pub trait Object {
-    /// Create a new cron job.
-    async fn create(job: Json<JobSpec>) -> HandlerResult<()>;
-    /// Create a new or replace an existing cron job.
-    async fn replace(job: Json<JobSpec>) -> HandlerResult<()>;
-    /// Cancel an existing cron job.
-    async fn cancel() -> HandlerResult<()>;
-    /// Internal handler for running the cron job.
-    async fn run() -> HandlerResult<()>;
-    /// Get the details of an existing cron job.
-    #[shared]
-    async fn get() -> HandlerResult<Json<JobSpec>>;
-    /// Get the next run time of an existing cron job.
-    #[shared]
-    #[name = "getNextRun"]
-    async fn get_next_run() -> HandlerResult<Json<NextRun>>;
-}
 
 #[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
@@ -114,46 +90,44 @@ pub struct NextRun {
     timestamp: DateTime<Utc>,
 }
 
-pub struct ObjectImpl {
+pub struct CronJob {
     rhai_engine: rhai::Engine,
 }
 
-impl ObjectImpl {
+impl CronJob {
     pub fn new(rhai_engine: rhai::Engine) -> Self {
         Self { rhai_engine }
     }
 
-    async fn schedule_next(ctx: &ObjectContext<'_>, schedule: String) -> Result<()> {
+    async fn schedule_next(ctx: &ObjectContext<'_>, schedule: String) -> HandlerResult<()> {
         let (next_time, schedule) = ctx
             .run(async || {
-                let next_time = parse_schedule(schedule)?
-                    .upcoming(Utc)
-                    .next()
-                    .ok_or_else(|| anyhow!("No upcoming schedule found"))
-                    .terminal_with_code(404)?;
+                let next_time =
+                    parse_schedule(schedule)?
+                        .upcoming(Utc)
+                        .next()
+                        .ok_or_else(|| {
+                            TerminalError::new("No upcoming schedule found").with_code(404)
+                        })?;
 
-                let duration = (next_time - Utc::now())
-                    .to_std()
-                    .map_err(|err| anyhow!("Failed to convert duration: {}", err))
-                    .terminal_with_code(422)?;
+                let duration = (next_time - Utc::now()).to_std().map_err(|err| {
+                    TerminalError::new(format!("Failed to convert duration: {}", err))
+                        .with_code(422)
+                })?;
 
                 Ok(Json((next_time, duration)))
             })
-            .await
-            .map_err(|err| anyhow!("Error: {}", err))?
+            .await?
             .into_inner();
 
         let handle = ctx
-            .object_client::<ObjectClient>(ctx.key())
+            .object_client::<CronJobClient>(ctx.key())
             .run()
-            .send_after(schedule);
+            .send_after(schedule)
+            .await?;
 
         let next_run = NextRun {
-            invocation_id: handle
-                .invocation_id()
-                .await
-                .map_err(|err| anyhow!("Failed to get invocation ID: {}", err))?
-                .to_string(),
+            invocation_id: handle.invocation_id().to_string(),
             timestamp: next_time,
         };
 
@@ -165,7 +139,9 @@ impl ObjectImpl {
     async fn _create(&self, ctx: &ObjectContext<'_>, job: Json<JobSpec>) -> HandlerResult<()> {
         // Check if job already exists
         if ctx.get::<Json<JobSpec>>(JOB_SPEC).await?.is_some() {
-            return Err(TerminalError::new_with_code(409, "Cron job already exists").into());
+            return Err(TerminalError::new("Cron job already exists")
+                .with_code(409)
+                .into());
         }
 
         let job = job.into_inner();
@@ -175,7 +151,7 @@ impl ObjectImpl {
 
         ctx.set::<Json<JobSpec>>(JOB_SPEC, Json(job.clone()));
 
-        ObjectImpl::schedule_next(ctx, job.schedule).await?;
+        CronJob::schedule_next(ctx, job.schedule).await?;
 
         Ok(())
     }
@@ -189,16 +165,14 @@ impl ObjectImpl {
 
         // Cancel the next scheduled invocation
         if let Some(next_run) = next_run.map(|s| s.into_inner()) {
-            ctx.invocation_handle(next_run.invocation_id)
-                .cancel()
-                .await?;
+            ctx.invocation_handle(next_run.invocation_id).cancel();
         }
 
         Ok(())
     }
 }
 
-impl Default for ObjectImpl {
+impl Default for CronJob {
     fn default() -> Self {
         let mut engine = rhai::Engine::new();
 
@@ -216,20 +190,29 @@ impl Default for ObjectImpl {
 const JOB_SPEC: &str = "job_spec";
 const NEXT_RUN: &str = "next_run";
 
-impl Object for ObjectImpl {
+#[restate_sdk::object(name = "CronJob")]
+impl CronJob {
+    /// Create a new cron job.
+    #[handler]
     async fn create(&self, ctx: ObjectContext<'_>, job: Json<JobSpec>) -> HandlerResult<()> {
         self._create(&ctx, job).await
     }
 
+    /// Create a new or replace an existing cron job.
+    #[handler]
     async fn replace(&self, ctx: ObjectContext<'_>, job: Json<JobSpec>) -> HandlerResult<()> {
         self._cancel(&ctx).await?;
         self._create(&ctx, job).await
     }
 
+    /// Cancel an existing cron job.
+    #[handler]
     async fn cancel(&self, ctx: ObjectContext<'_>) -> HandlerResult<()> {
         self._cancel(&ctx).await
     }
 
+    /// Internal handler for running the cron job.
+    #[handler(ingress_private)]
     async fn run(&self, ctx: ObjectContext<'_>) -> HandlerResult<()> {
         let job = ctx.get::<Json<JobSpec>>(JOB_SPEC).await?;
 
@@ -241,53 +224,114 @@ impl Object for ObjectImpl {
         let job = job.unwrap().into_inner();
         let target = job.target.clone();
         let content_type = "application/json".to_string();
-        let idempotency_key = ctx.headers().get("x-restate-id").map(|v| v.to_string());
 
         if let Some(payload) = &job.payload {
             let data = match payload {
                 Payload::Json { content: data } => Json(data.clone()),
                 Payload::Rhai { content: script } => {
-                    let result = self.rhai_engine.eval::<rhai::Dynamic>(script.as_str())?;
+                    ctx.run(async || {
+                        let result = self
+                            .rhai_engine
+                            .eval::<rhai::Dynamic>(script.as_str())
+                            .terminal()?;
+                        let value =
+                            rhai::serde::from_dynamic::<serde_json::Value>(&result).terminal()?;
 
-                    let value = rhai::serde::from_dynamic::<serde_json::Value>(&result)?;
-
-                    Json(value)
+                        Ok(Json(value))
+                    })
+                    .name("evaluate-rhai-payload")
+                    .await?
                 }
             };
 
             ctx.request::<_, ()>(target.into(), data)
                 .header("Content-Type".to_string(), content_type)
-                .idempotency_key_maybe(idempotency_key)
-                .call()
+                .idempotency_key(ctx.invocation_id())
+                .send()
                 .await?;
         } else {
             ctx.request::<(), ()>(target.into(), ())
-                .idempotency_key_maybe(idempotency_key)
-                .call()
+                .idempotency_key(ctx.invocation_id())
+                .send()
                 .await?;
         }
 
         // Schedule the next invocation
-        ObjectImpl::schedule_next(&ctx, job.schedule).await?;
+        CronJob::schedule_next(&ctx, job.schedule).await?;
 
         Ok(())
     }
 
+    /// Get the details of an existing cron job.
+    #[handler]
     async fn get(&self, ctx: SharedObjectContext<'_>) -> HandlerResult<Json<JobSpec>> {
-        ctx.get::<Json<JobSpec>>(JOB_SPEC)
-            .await?
-            .ok_or_else(|| TerminalError::new_with_code(404, "Cron job not found").into())
+        ctx.get::<Json<JobSpec>>(JOB_SPEC).await?.ok_or_else(|| {
+            TerminalError::new("Cron job not found")
+                .with_code(404)
+                .into()
+        })
     }
 
+    /// Get the next run time of an existing cron job.
+    #[handler(name = "getNextRun")]
     async fn get_next_run(&self, ctx: SharedObjectContext<'_>) -> HandlerResult<Json<NextRun>> {
-        ctx.get::<Json<NextRun>>(NEXT_RUN)
-            .await?
-            .ok_or_else(|| TerminalError::new_with_code(404, "Cron job not found").into())
+        ctx.get::<Json<NextRun>>(NEXT_RUN).await?.ok_or_else(|| {
+            TerminalError::new("Cron job not found")
+                .with_code(404)
+                .into()
+        })
     }
 }
 
-fn parse_schedule(schedule: String) -> Result<Schedule, HandlerError> {
-    Schedule::from_str(schedule.as_str())
-        .map_err(|err| anyhow!("Failed to parse schedule: {}", err))
-        .terminal_with_code(422)
+fn parse_schedule(schedule: String) -> HandlerResult<Schedule> {
+    let schedule = Schedule::from_str(schedule.as_str()).map_err(|err| {
+        TerminalError::new(format!("Failed to parse schedule: {}", err)).with_code(422)
+    })?;
+
+    Ok(schedule)
+}
+
+#[cfg(test)]
+mod tests {
+    use restate_sdk::{
+        discovery::{HandlerType, ServiceType as RestateServiceType},
+        service::Discoverable,
+    };
+
+    use super::CronJob;
+
+    #[test]
+    fn discovers_cron_job_api() {
+        let service = <CronJob as Discoverable>::discover();
+
+        assert_eq!(service.name.as_str(), "CronJob");
+        assert_eq!(service.ty, RestateServiceType::VirtualObject);
+
+        let mut handlers: Vec<_> = service
+            .handlers
+            .iter()
+            .map(|handler| handler.name.as_str())
+            .collect();
+        handlers.sort_unstable();
+        assert_eq!(
+            handlers,
+            ["cancel", "create", "get", "getNextRun", "replace", "run"]
+        );
+
+        let mut shared_handlers: Vec<_> = service
+            .handlers
+            .iter()
+            .filter(|handler| handler.ty == Some(HandlerType::Shared))
+            .map(|handler| handler.name.as_str())
+            .collect();
+        shared_handlers.sort_unstable();
+        assert_eq!(shared_handlers, ["get", "getNextRun"]);
+
+        let run = service
+            .handlers
+            .iter()
+            .find(|handler| handler.name.as_str() == "run")
+            .unwrap();
+        assert_eq!(run.ingress_private, Some(true));
+    }
 }
