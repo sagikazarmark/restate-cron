@@ -22,7 +22,7 @@ anyhow = { workspace = true }
 clap = { version = "4.5.56", features = ["derive", "env"] }
 figment = { version = "0.10.19", features = ["env", "json", "toml", "yaml"] }
 humantime-serde = "1.1"
-restate-sdk = { workspace = true }
+restate-sdk = { workspace = true, features = ["http_server", "rust_crypto", "tracing-span-filter"] }
 schemars = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

@@ -49,6 +49,9 @@ The `CronJob` object exposes these handlers:
 | `get` | GET | Retrieve job details |
 | `getNextRun` | GET | Get next scheduled execution time |
 
+Target invocations are sent without waiting for their result. The next run is scheduled immediately,
+so executions of the target may overlap.
+
 ## Job specification
 
 ```json

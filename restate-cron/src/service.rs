@@ -1,6 +1,5 @@
 use std::{convert::TryFrom, str::FromStr};
 
-use anyhow::{Result, anyhow};
 use chrono::{DateTime, Utc};
 use cron::Schedule;
 use restate_sdk::{context::RequestTarget, prelude::*};
@@ -8,8 +7,6 @@ use rhai::packages::Package;
 use rhai_chrono::ChronoPackage;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-
-use crate::utils::RequestExt;
 
 #[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
@@ -102,7 +99,7 @@ impl CronJob {
         Self { rhai_engine }
     }
 
-    async fn schedule_next(ctx: &ObjectContext<'_>, schedule: String) -> Result<()> {
+    async fn schedule_next(ctx: &ObjectContext<'_>, schedule: String) -> HandlerResult<()> {
         let (next_time, schedule) = ctx
             .run(async || {
                 let next_time =
@@ -120,16 +117,14 @@ impl CronJob {
 
                 Ok(Json((next_time, duration)))
             })
-            .await
-            .map_err(|err| anyhow!("Error: {}", err))?
+            .await?
             .into_inner();
 
         let handle = ctx
             .object_client::<CronJobClient>(ctx.key())
             .run()
             .send_after(schedule)
-            .await
-            .map_err(|err| anyhow!("Failed to schedule invocation: {}", err))?;
+            .await?;
 
         let next_run = NextRun {
             invocation_id: handle.invocation_id().to_string(),
@@ -217,7 +212,7 @@ impl CronJob {
     }
 
     /// Internal handler for running the cron job.
-    #[handler]
+    #[handler(ingress_private)]
     async fn run(&self, ctx: ObjectContext<'_>) -> HandlerResult<()> {
         let job = ctx.get::<Json<JobSpec>>(JOB_SPEC).await?;
 
@@ -229,29 +224,35 @@ impl CronJob {
         let job = job.unwrap().into_inner();
         let target = job.target.clone();
         let content_type = "application/json".to_string();
-        let idempotency_key = ctx.headers().get("x-restate-id").map(|v| v.to_string());
 
         if let Some(payload) = &job.payload {
             let data = match payload {
                 Payload::Json { content: data } => Json(data.clone()),
                 Payload::Rhai { content: script } => {
-                    let result = self.rhai_engine.eval::<rhai::Dynamic>(script.as_str())?;
+                    ctx.run(async || {
+                        let result = self
+                            .rhai_engine
+                            .eval::<rhai::Dynamic>(script.as_str())
+                            .terminal()?;
+                        let value =
+                            rhai::serde::from_dynamic::<serde_json::Value>(&result).terminal()?;
 
-                    let value = rhai::serde::from_dynamic::<serde_json::Value>(&result)?;
-
-                    Json(value)
+                        Ok(Json(value))
+                    })
+                    .name("evaluate-rhai-payload")
+                    .await?
                 }
             };
 
             ctx.request::<_, ()>(target.into(), data)
                 .header("Content-Type".to_string(), content_type)
-                .idempotency_key_maybe(idempotency_key)
-                .call()
+                .idempotency_key(ctx.invocation_id())
+                .send()
                 .await?;
         } else {
             ctx.request::<(), ()>(target.into(), ())
-                .idempotency_key_maybe(idempotency_key)
-                .call()
+                .idempotency_key(ctx.invocation_id())
+                .send()
                 .await?;
         }
 
@@ -282,7 +283,7 @@ impl CronJob {
     }
 }
 
-fn parse_schedule(schedule: String) -> Result<Schedule, HandlerError> {
+fn parse_schedule(schedule: String) -> HandlerResult<Schedule> {
     let schedule = Schedule::from_str(schedule.as_str()).map_err(|err| {
         TerminalError::new(format!("Failed to parse schedule: {}", err)).with_code(422)
     })?;
@@ -325,5 +326,12 @@ mod tests {
             .collect();
         shared_handlers.sort_unstable();
         assert_eq!(shared_handlers, ["get", "getNextRun"]);
+
+        let run = service
+            .handlers
+            .iter()
+            .find(|handler| handler.name.as_str() == "run")
+            .unwrap();
+        assert_eq!(run.ingress_private, Some(true));
     }
 }
