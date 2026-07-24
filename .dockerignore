@@ -1,5 +1,4 @@
 *
-!/restate-cron/
-!/restate-cron-server/
+!/crates/
 !Cargo.*
 !**/Cargo.*

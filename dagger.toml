@@ -1,0 +1,15 @@
+ignore = [".devenv", "target"]
+
+[modules.rust]
+source = "github.com/sagikazarmark/daggerverse-beta/rust"
+# restate-sdk transitively uses rsa 0.9.10, which has no fixed release for RUSTSEC-2023-0071.
+check.skip = ["audit"]
+
+[modules.rust.settings]
+version = "1.97-slim-trixie"
+
+[modules.dagger-gha]
+source = "github.com/sagikazarmark/daggerverse-beta/dagger-gha"
+
+[modules.dagger-gha.settings]
+lock = '"PINNED"'

@@ -1,69 +1,72 @@
-# Restate cron service
+# restate-cron
 
-![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/sagikazarmark/restate-cron/ci.yaml?style=flat-square)
-![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/sagikazarmark/restate-cron/badge?style=flat-square)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/sagikazarmark/restate-cron/dagger.yaml?style=flat-square)](https://github.com/sagikazarmark/restate-cron/actions/workflows/dagger.yaml)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/sagikazarmark/restate-cron/badge?style=flat-square)](https://securityscorecards.dev/viewer/?uri=github.com/sagikazarmark/restate-cron)
+[![crates.io](https://img.shields.io/crates/v/restate-cron?style=flat-square)](https://crates.io/crates/restate-cron)
+[![docs.rs](https://img.shields.io/docsrs/restate-cron?style=flat-square)](https://docs.rs/restate-cron)
 
-A cron scheduling service for [Restate](https://restate.dev/) that enables scheduled invocations of services, objects, and workflows using standard cron expressions.
+**Cron scheduling service for [Restate](https://restate.dev/).**
 
 ## Features
 
-- Standard cron expression scheduling (with seconds precision)
-- Multiple invocation targets: services, objects, and workflows
-- Static JSON or dynamic [Rhai](https://rhai.rs/) script payloads
-- Automatic rescheduling after each execution
-- Built on Restate's durable execution model
+- **Standard cron expressions** with seconds precision
+- **Multiple invocation targets** for services, objects, and workflows
+- **Static or dynamic payloads** using JSON or [Rhai](https://rhai.rs/) scripts
+- **Automatic rescheduling** after each execution
+- **Durable execution** built on Restate
+
+## Quick Start
+
+Add the library to your application:
+
+```toml
+[dependencies]
+restate-cron = "0.10"
+```
+
+See the [`restate-cron` Quick Start](crates/restate-cron/README.md#quick-start) for an endpoint setup example and the service API.
 
 ## Packages
 
-This repository contains two packages:
-
 | Package | Description |
 |---------|-------------|
-| [restate-cron](restate-cron/) | Library for building Restate services with cron scheduling |
-| [restate-cron-server](restate-cron-server/) | Ready-to-use server with the cron service |
+| [`restate-cron`](crates/restate-cron/) | Library for adding cron scheduling to Restate services |
+| [`restate-cron-endpoint`](crates/restate-cron-endpoint/) | Ready-to-use endpoint hosting the cron service |
 
-### restate-cron
+## Standalone Server
 
-A Rust library that provides a `CronJob` object service you can integrate into your own Restate applications. Use this if you want to embed cron scheduling into an existing service or customize the server configuration.
-
-See the [restate-cron README](restate-cron/README.md) for usage details.
-
-### restate-cron-server
-
-A standalone server that exposes the cron service over HTTP. Use this if you want a ready-to-deploy cron scheduling solution.
+Run the server image and register its endpoint with Restate:
 
 ```bash
 docker run -p 9080:9080 ghcr.io/sagikazarmark/restate-cron:latest
+restate deployments register http://localhost:9080
 ```
 
-See the [restate-cron-server README](restate-cron-server/README.md) for configuration and deployment options.
+See the [`restate-cron-endpoint` README](crates/restate-cron-endpoint/README.md) for configuration and deployment options.
 
 ## Development
 
-### Prerequisites
+Minimum verification:
 
-- Rust 1.93+
-- A running Restate server for testing
+- `cargo fmt --all -- --check`
+- `cargo clippy --workspace --all-targets --all-features -- -D warnings`
+- `cargo test --workspace --all-features`
 
-### Build
+Or run the same checks (fmt, clippy, test, doc, and build) in a container with [Dagger](https://dagger.io), exactly as CI does:
 
-```bash
-cargo build
-```
-
-### Test
-
-```bash
-cargo test
-```
-
-### Lint
-
-```bash
-cargo fmt --check
-cargo clippy
-```
+- `dagger check`
 
 ## License
 
-The project is licensed under the [MIT License](LICENSE).
+Licensed under either of
+
+- Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or <http://www.apache.org/licenses/LICENSE-2.0>)
+- MIT license ([LICENSE-MIT](LICENSE-MIT) or <http://opensource.org/licenses/MIT>)
+
+at your option.
+
+### Contribution
+
+Unless you explicitly state otherwise, any contribution intentionally submitted
+for inclusion in the work by you, as defined in the Apache-2.0 license, shall be
+dual licensed as above, without any additional terms or conditions.

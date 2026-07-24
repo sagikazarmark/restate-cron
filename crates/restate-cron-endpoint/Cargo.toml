@@ -1,0 +1,30 @@
+[package]
+name = "restate-cron-endpoint"
+version.workspace = true
+description = "Standalone endpoint hosting the cron scheduling service for Restate"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+publish = false
+
+[[bin]]
+name = "restate-cron"
+path = "src/main.rs"
+doc = false
+
+[dependencies]
+restate-cron = { path = "../restate-cron", version = "0.10.0" }
+
+anyhow = "1"
+clap = { version = "4", features = ["derive", "env"] }
+figment = { version = "0.10", features = ["env", "json", "toml", "yaml"] }
+humantime-serde = "1"
+restate-sdk = { workspace = true, features = ["http_server", "rust_crypto", "tracing-span-filter"] }
+serde = { workspace = true }
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[package.metadata.release]
+publish = false
