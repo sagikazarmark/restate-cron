@@ -9,9 +9,8 @@
 
 ## Install
 
-```toml
-[dependencies]
-restate-cron = "0.10"
+```bash
+cargo add restate-cron
 ```
 
 ## Quick Start
@@ -40,21 +39,17 @@ let mut engine = rhai::Engine::new();
 let service = CronJob::new(engine);
 ```
 
-## Feature Flags
-
-This crate does not define feature flags.
-
 ## API
 
 The `CronJob` object exposes these handlers:
 
-| Handler | Method | Description |
-|---------|--------|-------------|
-| `create` | POST | Create a new cron job |
-| `replace` | POST | Create or replace an existing job |
-| `cancel` | POST | Cancel an existing job |
-| `get` | GET | Retrieve job details |
-| `getNextRun` | GET | Get the next scheduled execution time |
+| Handler      | Method | Description                           |
+| ------------ | ------ | ------------------------------------- |
+| `create`     | POST   | Create a new cron job                 |
+| `replace`    | POST   | Create or replace an existing job     |
+| `cancel`     | POST   | Cancel an existing job                |
+| `get`        | GET    | Retrieve job details                  |
+| `getNextRun` | GET    | Get the next scheduled execution time |
 
 Target invocations are sent without waiting for their result. The next run is scheduled immediately, so executions of the target may overlap.
 

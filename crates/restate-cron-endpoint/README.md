@@ -2,20 +2,18 @@
 
 **Standalone endpoint hosting the cron scheduling service for [Restate](https://restate.dev/).**
 
-`restate-cron-endpoint` hosts the `restate-cron` service over HTTP as the `restate-cron` binary.
-
 ## Install
 
-Multi-platform images for amd64 and arm64 are available from GitHub Container Registry:
+Pre-built container images are available from GitHub Container Registry:
 
 ```bash
 docker pull ghcr.io/sagikazarmark/restate-cron:latest
 ```
 
-Build the binary from a repository checkout with:
+Install from yource:
 
 ```bash
-cargo install --path crates/restate-cron-endpoint
+cargo install restate-cron-endpoint
 ```
 
 ## Quick Start
@@ -33,10 +31,6 @@ Or run the published container image:
 docker run -p 9080:9080 ghcr.io/sagikazarmark/restate-cron:latest
 ```
 
-## Feature Flags
-
-This crate does not define feature flags.
-
 ## Configuration
 
 Pass configuration through CLI arguments:
@@ -48,11 +42,11 @@ Pass configuration through CLI arguments:
 
 The server reads these environment variables:
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `CONFIG_FILE` | Path to configuration file | - |
-| `PORT` | Server listen port | 9080 |
-| `RUST_LOG` | Log level | info |
+| Variable      | Description                | Default |
+| ------------- | -------------------------- | ------- |
+| `CONFIG_FILE` | Path to configuration file | -       |
+| `PORT`        | Server listen port         | 9080    |
+| `RUST_LOG`    | Log level                  | info    |
 
 Configuration files may use JSON, YAML, or TOML:
 

@@ -7,7 +7,6 @@ rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 homepage.workspace = true
-publish = false
 
 [[bin]]
 name = "restate-cron"
@@ -25,6 +24,3 @@ restate-sdk = { workspace = true, features = ["http_server", "rust_crypto", "tra
 serde = { workspace = true }
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-
-[package.metadata.release]
-publish = false
