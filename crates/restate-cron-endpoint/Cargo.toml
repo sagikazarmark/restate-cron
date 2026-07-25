@@ -14,7 +14,7 @@ path = "src/main.rs"
 doc = false
 
 [dependencies]
-restate-cron = { path = "../restate-cron", version = "0.10.0" }
+restate-cron = { path = "../restate-cron", version = "0.11.0" }
 
 anyhow = "1"
 clap = { version = "4", features = ["derive", "env"] }
