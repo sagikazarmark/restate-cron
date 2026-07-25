@@ -10,15 +10,6 @@ updates:
         patterns:
           - "*"
 
-  - package-ecosystem: docker
-    directory: /
-    schedule:
-      interval: daily
-    groups:
-      docker-dependencies:
-        patterns:
-          - "*"
-
   - package-ecosystem: github-actions
     directory: /
     schedule:
@@ -28,6 +19,4 @@ updates:
         patterns:
           - "*"
     exclude-paths:
-      - .github/workflows/release.yml
       - .github/workflows/dagger.yaml
-      - .github/workflows/dagger-*.yaml

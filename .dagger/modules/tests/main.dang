@@ -1,0 +1,46 @@
+type Tests {
+  let rust: Rust!
+
+  new(rustVersion: String!) {
+    self.rust = Dagger.rust(version: rustVersion)
+
+    self
+  }
+
+  """
+  Build and register the endpoint, then verify Restate discovered its service.
+  """
+  endpoint(ws: Workspace!): Void @check @cache(policy: FunctionCachePolicy.Never) {
+    let binary = self
+      .rust
+      .build(
+        ws,
+        package: ["restate-cron-endpoint"],
+        bin: ["restate-cron"],
+        release: true,
+      )
+
+    let endpoint = Dagger
+      .container
+      .from("debian:trixie-slim")
+      .withFile("/usr/local/bin/restate-cron", binary.file("restate-cron"))
+      .withExposedPort(9080)
+      .asService(args: ["/usr/local/bin/restate-cron"])
+
+    let restate = Dagger.restate.withDeployment(endpoint)
+
+    let deployments = JSON.decode(restate.client.sql(
+      "SELECT * FROM sys_deployment",
+      format: RestateSqlResultFormat.JSON,
+    ).output) :: [DeploymentQueryResult!]!
+
+    assert { deployments.length == 1 }
+    assert { deployments[0].endpoint.trimSuffix("/") == endpoint.endpoint(scheme: "http").trimSuffix("/") }
+    assert { deployments[0].services.contains("CronJob") }
+  }
+}
+
+type DeploymentQueryResult {
+  endpoint: String!
+  services: [String!]!
+}

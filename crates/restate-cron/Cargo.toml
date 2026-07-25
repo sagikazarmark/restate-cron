@@ -1,0 +1,21 @@
+[package]
+name = "restate-cron"
+version.workspace = true
+description = "Cron scheduling service for Restate"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+
+[dependencies]
+chrono = { version = "0.4", features = ["serde"] }
+content_disposition = "0.4"
+cron = { version = "0.17", features = ["serde"] }
+futures = "0.3"
+restate-sdk = { workspace = true, features = ["hyper", "schemars"] }
+rhai = { version = "1", features = ["serde", "sync"] }
+rhai-chrono = { version = "0.1", features = ["sync"] }
+schemars = { version = "1", features = ["chrono04", "jiff02", "url2"] }
+serde = { workspace = true }
+serde_json = "1"
