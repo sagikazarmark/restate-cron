@@ -3,7 +3,7 @@
 
 FROM --platform=$BUILDPLATFORM tonistiigi/xx:1.9.0@sha256:c64defb9ed5a91eacb37f96ccc3d4cd72521c4bd18d5442905b95e2226b0e707 AS xx
 
-FROM --platform=$BUILDPLATFORM rust:1.97.1-bookworm@sha256:77fac8b98f9f46062bb680b6d25d5bcaabfc400143952ebc572e924bcbedc3fa AS base
+FROM --platform=$BUILDPLATFORM rust:1.97.1-bookworm@sha256:14bc9c5966e7b3a385794b3d5389a8765668342025fbcc7b2e3d2866ac4bd8c3 AS base
 
 ARG CARGO_CHEF_VERSION=0.1.77
 RUN cargo install cargo-chef --version $CARGO_CHEF_VERSION --locked
@@ -43,7 +43,7 @@ RUN xx-verify ./target/$(xx-cargo --print-target-triple)/release/restate-cron
 RUN cp ./target/$(xx-cargo --print-target-triple)/release/restate-cron /usr/local/bin/restate-cron
 
 
-FROM debian:13.6-slim@sha256:020c0d20b9880058cbe785a9db107156c3c75c2ac944a6aa7ab59f2add76a7bd
+FROM debian:13.6-slim@sha256:3a39a0592364683e6bab97937b72cad5a8fa6dcbbee90edb3bb48c7f8e94f258
 
 COPY --from=builder /usr/local/bin/restate-cron /usr/local/bin/
 
