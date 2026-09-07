@@ -11,7 +11,7 @@ repository = "https://github.com/sagikazarmark/restate-cron"
 homepage = "https://github.com/sagikazarmark/restate-cron"
 
 [workspace.dependencies]
-restate-sdk = { version = "0.11", default-features = false }
+restate-sdk = { version = "0.12", default-features = false }
 serde = { version = "1", features = ["derive"] }
 
 [workspace.metadata.release]
