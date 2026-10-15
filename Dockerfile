@@ -1,9 +1,9 @@
 # syntax=docker/dockerfile:1
 # check=skip=CopyIgnoredFile
 
-FROM --platform=$BUILDPLATFORM tonistiigi/xx:1.9.0@sha256:c64defb9ed5a91eacb37f96ccc3d4cd72521c4bd18d5442905b95e2226b0e707 AS xx
+FROM --platform=$BUILDPLATFORM tonistiigi/xx:1.10.0@sha256:40fe21f44bb8cddf1eb1226db190d0a984118f62ee02a91b77d99448d28264a6 AS xx
 
-FROM --platform=$BUILDPLATFORM rust:1.97.1-bookworm@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97 AS base
+FROM --platform=$BUILDPLATFORM rust:1.99.0-bookworm@sha256:114c7a4425406451c2866b6aafe69fe29b1b298832db1277d411ac73c82d04d6 AS base
 
 ARG CARGO_CHEF_VERSION=0.1.77
 RUN cargo install cargo-chef --version $CARGO_CHEF_VERSION --locked
@@ -43,7 +43,7 @@ RUN xx-verify ./target/$(xx-cargo --print-target-triple)/release/restate-cron
 RUN cp ./target/$(xx-cargo --print-target-triple)/release/restate-cron /usr/local/bin/restate-cron
 
 
-FROM debian:13.6-slim@sha256:3a39a0592364683e6bab97937b72cad5a8fa6dcbbee90edb3bb48c7f8e94f258
+FROM debian:13.7-slim@sha256:a29215f6a35e51e22adffa17f89e9d2ef06214e64a2bad10d765c46aea49f11f
 
 COPY --from=builder /usr/local/bin/restate-cron /usr/local/bin/
 
